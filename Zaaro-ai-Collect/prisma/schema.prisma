@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER") // "USER" or "ADMIN"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  recordings Recording[]
+}
+
+model Phrase {
+  id        String      @id @default(cuid())
+  text      String
+  domain    String      // "sante", "administration", "agriculture", "finance"
+  createdAt DateTime    @default(now())
+
+  recordings Recording[]
+}
+
+model Recording {
+  id          String      @id @default(cuid())
+  audioUrl    String      // Chemin Supabase Storage (bucket recordings)
+  audioUrl2   String?     // 2e prise audio
+  duration    Float
+  language    String
+  status      String      @default("PENDING") // "PENDING", "VALIDATED", "REJECTED"
+  createdAt   DateTime    @default(now())
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  
+  phraseId    String
+  phrase      Phrase      @relation(fields: [phraseId], references: [id])
+}
