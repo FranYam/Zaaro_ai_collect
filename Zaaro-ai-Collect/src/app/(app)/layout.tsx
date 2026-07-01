@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-[#F5F8FA] overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#F5F8FA] overflow-hidden">
       <Sidebar userName={session.user.name ?? "Utilisateur"} userRole={(session.user as { role?: string }).role ?? "USER"} />
       <main className="flex-1 overflow-auto p-4 md:p-8 pt-16 md:pt-8">
         {children}

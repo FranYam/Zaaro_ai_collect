@@ -47,7 +47,7 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
         />
       )}
 
-      <aside className={`bg-[#1A1A2E] flex flex-col py-6 h-screen border-r border-slate-800 shadow-2xl fixed md:relative z-50 transition-all duration-300 ease-in-out ${isOpenMobile ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isCollapsed ? "md:w-20" : "md:w-64"} w-64`}>
+      <aside className={`bg-[#1A1A2E] flex flex-col pt-6 pb-20 md:pb-6 h-[100dvh] border-r border-slate-800 shadow-2xl fixed md:relative z-50 transition-all duration-300 ease-in-out ${isOpenMobile ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isCollapsed ? "md:w-20" : "md:w-64"} w-64`}>
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between px-4"} mb-8`}>
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg">
