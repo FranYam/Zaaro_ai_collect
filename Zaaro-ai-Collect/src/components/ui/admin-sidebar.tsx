@@ -86,10 +86,12 @@ export default function AdminSidebar({ userName }: { userName: string }) {
               <Icon className="w-6 h-6 shrink-0" />
               {!isCollapsed && <span className="text-sm font-medium">{label}</span>}
 
-              <div className="absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-800 text-white text-xs font-bold rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
-                {label}
-                <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
-              </div>
+              {isCollapsed && (
+                <div className="hidden md:block absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-800 text-white text-xs font-bold rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
+                  {label}
+                  <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+                </div>
+              )}
             </Link>
           )
         })}
@@ -102,10 +104,12 @@ export default function AdminSidebar({ userName }: { userName: string }) {
         >
           <LogOut className="w-6 h-6 shrink-0" />
           {!isCollapsed && <span className="text-sm font-medium">Se déconnecter</span>}
-          <div className="absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
-            Se déconnecter
-            <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-red-600 rotate-45"></div>
-          </div>
+          {isCollapsed && (
+            <div className="hidden md:block absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
+              Se déconnecter
+              <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-red-600 rotate-45"></div>
+            </div>
+          )}
         </button>
 
         <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start px-3 gap-3"}`}>
