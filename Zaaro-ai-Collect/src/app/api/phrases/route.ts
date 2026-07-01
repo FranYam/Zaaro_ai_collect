@@ -17,23 +17,32 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Domaine requis" }, { status: 400 })
     }
 
-    // Get a phrase not yet recorded by this user in this language
+    // Find IDs already recorded by this user (in this language)
     const recorded = await prisma.recording.findMany({
-      where: { userId: session.user.id, language: language || undefined },
-      select: { phraseId: true }
+      where: { userId: session.user.id, ...(language ? { language } : {}) },
+      select: { phraseId: true },
     })
     const recordedIds = recorded.map((r) => r.phraseId)
 
-    const phrase = await prisma.phrase.findFirst({
+    // Fetch all PENDING phrases for this domain not yet done by this user
+    const available = await prisma.phrase.findMany({
       where: {
         domain,
-        id: { notIn: recordedIds.length > 0 ? recordedIds : undefined }
-      }
+        status: "PENDING",
+        ...(recordedIds.length > 0 ? { id: { notIn: recordedIds } } : {}),
+      },
+      select: { id: true, text: true, recordingCount: true },
     })
 
-    if (!phrase) {
-      return NextResponse.json({ done: true, message: "Toutes les phrases ont été enregistrées pour ce domaine !" })
+    if (available.length === 0) {
+      return NextResponse.json({
+        done: true,
+        message: "Bravo ! Vous avez enregistré toutes les phrases disponibles pour ce domaine.",
+      })
     }
+
+    // Pick one at random
+    const phrase = available[Math.floor(Math.random() * available.length)]
 
     return NextResponse.json({ phrase })
 

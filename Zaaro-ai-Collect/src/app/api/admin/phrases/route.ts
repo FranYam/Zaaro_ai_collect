@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma"
 import { z } from "zod"
 
 const phraseSchema = z.object({
-  text: z.string().min(5),
+  text: z.string().min(1),
   domain: z.enum(["sante", "administration", "agriculture", "finance"]),
 })
 
@@ -17,15 +17,15 @@ export async function GET() {
 
   const phrases = await prisma.phrase.findMany({
     include: {
-      _count: { select: { recordings: true } }
+      _count: { select: { recordings: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
   })
 
   return NextResponse.json({ phrases })
 }
 
-// POST: create a new phrase
+// POST: create a new phrase / word / expression
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id || (session.user as { role?: string }).role !== "ADMIN") {
@@ -36,9 +36,11 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { text, domain } = phraseSchema.parse(body)
 
-    const phrase = await prisma.phrase.create({ data: { text, domain } })
+    const phrase = await prisma.phrase.create({
+      data: { text: text.trim(), domain, recordingCount: 0, status: "PENDING" },
+    })
     return NextResponse.json({ success: true, phrase })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 })
   }
 }

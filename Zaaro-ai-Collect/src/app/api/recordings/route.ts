@@ -3,10 +3,17 @@ import { auth } from "@/../auth"
 import prisma from "@/lib/prisma"
 import { isSupabaseConfigured } from "@/lib/supabase/admin"
 import {
-  buildRecordingPath,
   deleteRecordingFiles,
   uploadRecordingFile,
 } from "@/lib/supabase/storage"
+
+const RECORDINGS_BUCKET = "recordings"
+const MAX_RECORDINGS = 10
+
+/** Build a numbered path: <userId>/<phraseId>/text_<n>.webm */
+function buildNumberedPath(userId: string, phraseId: string, take: 1 | 2, count: number) {
+  return `${userId}/${phraseId}/text_${count}_take${take}.webm`
+}
 
 export async function POST(req: Request) {
   try {
@@ -34,9 +41,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Données incomplètes" }, { status: 400 })
     }
 
-    const recordingId = crypto.randomUUID()
-    const path1 = buildRecordingPath(session.user.id, recordingId, 1)
-    const path2 = buildRecordingPath(session.user.id, recordingId, 2)
+    // Fetch current phrase to get the current count and verify it's still PENDING
+    const phrase = await prisma.phrase.findUnique({
+      where: { id: phraseId },
+      select: { id: true, recordingCount: true, status: true },
+    })
+
+    if (!phrase) {
+      return NextResponse.json({ error: "Phrase introuvable" }, { status: 404 })
+    }
+    if (phrase.status === "DONE") {
+      return NextResponse.json({ error: "Cette phrase a déjà atteint le nombre maximum d'enregistrements." }, { status: 409 })
+    }
+
+    const newCount = phrase.recordingCount + 1
+
+    // Build numbered file paths
+    const path1 = buildNumberedPath(session.user.id, phraseId, 1, newCount)
+    const path2 = buildNumberedPath(session.user.id, phraseId, 2, newCount)
 
     try {
       await uploadRecordingFile(audio1, path1)
@@ -50,20 +72,37 @@ export async function POST(req: Request) {
       )
     }
 
-    const recording = await prisma.recording.create({
-      data: {
-        id: recordingId,
-        audioUrl: path1,
-        audioUrl2: path2,
-        duration: duration || 0,
-        language,
-        userId: session.user.id,
-        phraseId,
-        status: "PENDING",
-      },
-    })
+    const recordingId = crypto.randomUUID()
 
-    return NextResponse.json({ success: true, recording })
+    // Create the Recording and update the Phrase counter atomically in a transaction
+    const [recording] = await prisma.$transaction([
+      prisma.recording.create({
+        data: {
+          id: recordingId,
+          audioUrl: path1,
+          audioUrl2: path2,
+          duration: duration || 0,
+          language,
+          userId: session.user.id,
+          phraseId,
+          status: "PENDING",
+        },
+      }),
+      prisma.phrase.update({
+        where: { id: phraseId },
+        data: {
+          recordingCount: newCount,
+          ...(newCount >= MAX_RECORDINGS ? { status: "DONE" } : {}),
+        },
+      }),
+    ])
+
+    return NextResponse.json({
+      success: true,
+      recording,
+      phraseCompleted: newCount >= MAX_RECORDINGS,
+      recordingNumber: newCount,
+    })
 
   } catch (error) {
     console.error("Recording save error:", error)

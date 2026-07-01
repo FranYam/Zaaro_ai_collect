@@ -25,6 +25,8 @@ model Phrase {
   text      String
   domain    String      // "sante", "administration", "agriculture", "finance"
   createdAt DateTime    @default(now())
+  recordingCount Int @default(0) // nombre d'enregistrements
+  status String @default("PENDING") // PENDING ou DONE
 
   recordings Recording[]
 }
