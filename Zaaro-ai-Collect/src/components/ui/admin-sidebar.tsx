@@ -29,13 +29,16 @@ export default function AdminSidebar({ userName }: { userName: string }) {
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpenMobile(true)} 
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-[#1A1A2E] rounded-md shadow-md text-white"
-        title="Ouvrir le menu"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#F5F8FA] border-b border-slate-200 flex items-center px-4 z-30">
+        <button 
+          onClick={() => setIsOpenMobile(true)} 
+          className="p-2 bg-white border border-slate-200 rounded-md shadow-sm text-slate-800"
+          title="Ouvrir le menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <span className="ml-4 font-bold text-slate-800">Zaaro AI Collect</span>
+      </div>
 
       {isOpenMobile && (
         <div 

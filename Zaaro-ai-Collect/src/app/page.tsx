@@ -203,7 +203,7 @@ export default function Home() {
             
             <div className="mt-16 text-center">
               <Link href="/register" className="inline-block bg-brand-yellow hover:bg-brand-yellow-dark text-brand-green-dark px-8 py-3.5 rounded-sm font-bold transition-colors shadow-lg">
-                Contribuer maintenant
+                Contribuer
               </Link>
             </div>
           </div>

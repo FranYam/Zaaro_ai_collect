@@ -62,7 +62,7 @@ export default async function DashboardPage() {
         <Link href="/record">
           <Button size="lg" className="flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold shadow-sm">
             <Mic className="w-4 h-4" />
-            Contribuer maintenant
+            Contribuer
           </Button>
         </Link>
       </div>
