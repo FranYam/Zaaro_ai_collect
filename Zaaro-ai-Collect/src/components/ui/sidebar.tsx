@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, Mic, History, LogOut, ChevronLeft, ChevronRight } from "lucide-react"
-import { useState } from "react"
+import { LayoutDashboard, Mic, History, LogOut, ChevronLeft, ChevronRight, Menu, X } from "lucide-react"
+import { useState, useEffect } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -20,9 +20,31 @@ interface SidebarProps {
 export default function Sidebar({ userName, userRole }: SidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isOpenMobile, setIsOpenMobile] = useState(false)
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsOpenMobile(false)
+  }, [pathname])
 
   return (
-    <aside className={`bg-[#1A1A2E] flex flex-col py-6 h-screen border-r border-slate-800 shadow-2xl relative z-50 transition-all duration-300 ${isCollapsed ? "w-20" : "w-64"}`}>
+    <>
+      <button 
+        onClick={() => setIsOpenMobile(true)} 
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-[#1A1A2E] rounded-md shadow-md text-white"
+        title="Ouvrir le menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {isOpenMobile && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsOpenMobile(false)}
+        />
+      )}
+
+      <aside className={`bg-[#1A1A2E] flex flex-col py-6 h-screen border-r border-slate-800 shadow-2xl fixed md:relative z-50 transition-all duration-300 ease-in-out ${isOpenMobile ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isCollapsed ? "md:w-20" : "md:w-64"} w-64`}>
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between px-4"} mb-8`}>
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg">
@@ -32,10 +54,16 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
         </div>
         <button
           onClick={() => setIsCollapsed((value) => !value)}
-          className="ml-2 p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          className="hidden md:block ml-2 p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-all"
           title={isCollapsed ? "Déplier la barre" : "Replier la barre"}
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+        <button
+          onClick={() => setIsOpenMobile(false)}
+          className="md:hidden ml-2 p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+        >
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -92,5 +120,6 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
         </Link>
       </div>
     </aside>
+    </>
   )
 }
