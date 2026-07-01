@@ -4,45 +4,80 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url       = env("DATABASE_URL")   // URL de connexion poolée (PgBouncer via Supabase)
+  directUrl = env("DIRECT_URL")     // URL directe (sans pooler) requise pour les migrations
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// User
+// Représente un compte enregistré sur la plateforme.
+// Les rôles possibles sont "USER" (contributeur) et "ADMIN" (gestionnaire).
+// ─────────────────────────────────────────────────────────────────────────────
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
-  role         String   @default("USER") // "USER" or "ADMIN"
+  role         String   @default("USER") // "USER" = contributeur | "ADMIN" = gestionnaire
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   recordings Recording[]
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Phrase
+// Un texte à enregistrer : peut être un mot, une expression ou une phrase
+// complète. Tous les types sont stockés dans le même modèle (pas de distinction).
+//
+// Cycle de vie :
+//   PENDING → le texte est proposé aléatoirement aux contributeurs
+//   DONE    → 10 enregistrements reçus, le texte n'est plus proposé
+//
+// recordingCount est incrémenté à chaque Recording créé (voir recordings/route.ts).
+// Quand recordingCount atteint 10, status passe automatiquement à "DONE".
+// ─────────────────────────────────────────────────────────────────────────────
 model Phrase {
-  id        String      @id @default(cuid())
-  text      String
-  domain    String      // "sante", "administration", "agriculture", "finance"
-  createdAt DateTime    @default(now())
-  recordingCount Int @default(0) // nombre d'enregistrements
-  status String @default("PENDING") // PENDING ou DONE
+  id             String    @id @default(cuid())
+  text           String                          // le texte à lire et enregistrer
+  domain         String                          // "sante" | "administration" | "agriculture" | "finance"
+  createdAt      DateTime  @default(now())
+  recordingCount Int       @default(0)           // nombre d'enregistrements reçus (max : 10)
+  status         String    @default("PENDING")   // "PENDING" (actif) ou "DONE" (complété)
 
   recordings Recording[]
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Recording
+// Un enregistrement audio soumis par un contributeur pour une Phrase donnée.
+//
+// Stockage audio :
+//   Les fichiers audio ne sont PAS stockés en base. Seul le chemin Supabase
+//   Storage est stocké (audioUrl, audioUrl2). Pour lire les fichiers, il faut
+//   générer une URL signée via resolvePlaybackUrl() (voir lib/supabase/storage.ts).
+//
+// Convention de nommage des fichiers :
+//   <userId>/<phraseId>/text_<n>_take<1|2>.webm
+//   où <n> est le numéro d'ordre de cet enregistrement pour cette phrase.
+//
+// Statuts possibles :
+//   PENDING   → en attente de validation par un admin
+//   VALIDATED → validé et inclus dans le dataset final
+//   REJECTED  → rejeté (mauvaise qualité audio, mauvaise prononciation, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
 model Recording {
-  id          String      @id @default(cuid())
-  audioUrl    String      // Chemin Supabase Storage (bucket recordings)
-  audioUrl2   String?     // 2e prise audio
-  duration    Float
-  language    String
-  status      String      @default("PENDING") // "PENDING", "VALIDATED", "REJECTED"
-  createdAt   DateTime    @default(now())
+  id        String   @id @default(cuid())
+  audioUrl  String                         // chemin Supabase Storage — take 1
+  audioUrl2 String?                        // chemin Supabase Storage — take 2 (facultatif)
+  duration  Float                          // durée totale en secondes (take1 + take2)
+  language  String                         // langue parlée (ex: "Mooré", "Dioula")
+  status    String   @default("PENDING")   // "PENDING" | "VALIDATED" | "REJECTED"
+  createdAt DateTime @default(now())
 
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  
-  phraseId    String
-  phrase      Phrase      @relation(fields: [phraseId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  phraseId String
+  phrase   Phrase @relation(fields: [phraseId], references: [id])
 }

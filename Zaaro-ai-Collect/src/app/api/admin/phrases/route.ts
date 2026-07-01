@@ -3,12 +3,25 @@ import { auth } from "@/../auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 
+/**
+ * Schéma de validation pour la création manuelle d'un texte.
+ * - text  : min 1 caractère (accepte les mots courts comme "eau", "non", etc.)
+ * - domain: valeur parmi les 4 domaines du projet
+ */
 const phraseSchema = z.object({
   text: z.string().min(1),
   domain: z.enum(["sante", "administration", "agriculture", "finance"]),
 })
 
-// GET all phrases with recording counts
+/**
+ * GET /api/admin/phrases
+ *
+ * Retourne la liste complète des textes du corpus avec le nombre
+ * d'enregistrements reçus, triés par statut (PENDING en premier) puis
+ * par date de création décroissante.
+ *
+ * Accès : ADMIN uniquement.
+ */
 export async function GET() {
   const session = await auth()
   if (!session?.user?.id || (session.user as { role?: string }).role !== "ADMIN") {
@@ -17,15 +30,29 @@ export async function GET() {
 
   const phrases = await prisma.phrase.findMany({
     include: {
+      // Nombre d'enregistrements liés à chaque phrase (pour l'affichage admin)
       _count: { select: { recordings: true } },
     },
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+    orderBy: [
+      { status: "asc" },      // DONE passe en bas, PENDING reste en haut
+      { createdAt: "desc" },  // Plus récents d'abord dans chaque groupe
+    ],
   })
 
   return NextResponse.json({ phrases })
 }
 
-// POST: create a new phrase / word / expression
+/**
+ * POST /api/admin/phrases
+ *
+ * Crée un nouveau texte dans le corpus manuellement.
+ * Le texte est trimé avant insertion.
+ * Le statut est initialisé à "PENDING" et le compteur à 0.
+ *
+ * Corps JSON attendu : { text: string, domain: string }
+ *
+ * Accès : ADMIN uniquement.
+ */
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id || (session.user as { role?: string }).role !== "ADMIN") {
@@ -37,7 +64,12 @@ export async function POST(req: Request) {
     const { text, domain } = phraseSchema.parse(body)
 
     const phrase = await prisma.phrase.create({
-      data: { text: text.trim(), domain, recordingCount: 0, status: "PENDING" },
+      data: {
+        text: text.trim(),
+        domain,
+        recordingCount: 0,   // aucun enregistrement au départ
+        status: "PENDING",   // disponible pour les contributeurs
+      },
     })
     return NextResponse.json({ success: true, phrase })
   } catch {
@@ -45,7 +77,15 @@ export async function POST(req: Request) {
   }
 }
 
-// DELETE: remove a phrase (only if no recordings attached)
+/**
+ * DELETE /api/admin/phrases?phraseId=<id>
+ *
+ * Supprime un texte et tous ses enregistrements associés.
+ * Les enregistrements sont supprimés en premier pour éviter une violation
+ * de contrainte de clé étrangère.
+ *
+ * Accès : ADMIN uniquement.
+ */
 export async function DELETE(req: Request) {
   const session = await auth()
   if (!session?.user?.id || (session.user as { role?: string }).role !== "ADMIN") {
@@ -57,7 +97,7 @@ export async function DELETE(req: Request) {
 
   if (!phraseId) return NextResponse.json({ error: "phraseId requis" }, { status: 400 })
 
-  // Delete recordings referencing this phrase first
+  // Suppression des enregistrements liés d'abord (intégrité référentielle)
   await prisma.recording.deleteMany({ where: { phraseId } })
   await prisma.phrase.delete({ where: { id: phraseId } })
 
