@@ -1,5 +1,7 @@
 # Zaaro AI Collect
 
+**English** | [Français](#zaaro-ai-collect-français)
+
 A modern web application for collecting audio recordings in Burkina Faso local languages. Built to record data through crowdsourced voice contributions in the aim to created an customized ai for translation purposes..
 
 ## Overview
@@ -325,3 +327,335 @@ Built with:
 - Supabase for infrastructure
 - Tailwind CSS for styling
 - All contributors preserving local languages
+
+---
+
+# Zaaro AI Collect (Français)
+
+[English](#zaaro-ai-collect) | **Français**
+
+Une application web moderne de collecte d'enregistrements audio dans les langues locales du Burkina Faso. Conçue pour recueillir des données par le biais de contributions vocales participatives, dans le but de créer une IA personnalisée à des fins de traduction.
+
+## Vue d'ensemble
+
+**Zaaro AI Collect** est une plateforme où des contributeurs enregistrent des échantillons de voix dans plusieurs langues locales, à travers différents domaines (santé, administration, agriculture, finance). L'application gère les enregistrements, valide les soumissions et fournit des statistiques pour les contributeurs comme pour les administrateurs.
+
+### Fonctionnalités clés
+
+- **Interface d'enregistrement vocal** — Interface d'enregistrement épurée et moderne avec visualisation de la forme d'onde en temps réel (style WhatsApp)
+- **Prise en charge multilingue** — Mooré, Dioula, Gourounsi et Fulfulde
+- **Tableau de bord contributeur** — Suivi des contributions personnelles, progression vers les objectifs et historique des enregistrements
+- **Panneau de validation admin** — Examiner, valider ou rejeter les soumissions avec des statistiques détaillées
+- **Stockage audio sécurisé** — Fichiers audio stockés dans Supabase avec des URLs signées
+- **Analyses et rapports** — Statistiques détaillées par langue, par domaine et par contributeur
+- **Contrôle d'accès par rôle** — Interfaces distinctes utilisateur et admin avec gestion des permissions
+- **Design responsive** — Fonctionne aussi bien sur ordinateur que sur mobile
+
+## Pile technique
+
+### Frontend
+
+- **Next.js 14** — Framework React avec App Router
+- **React 18** — Bibliothèque d'interface utilisateur
+- **TypeScript** — Typage statique
+- **Tailwind CSS** — Styling utilitaire
+- **Lucide Icons** — Jeu d'icônes
+- **React Hook Form** — Gestion des formulaires
+- **Zod** — Validation de schémas
+
+### Backend
+
+- **Next.js API Routes** — Backend serverless
+- **Prisma ORM** — Gestion de la base de données
+- **NextAuth v5** — Authentification et autorisation
+- **bcryptjs** — Hachage des mots de passe
+
+### Base de données & stockage
+
+- **PostgreSQL** — Base de données relationnelle (via Supabase)
+- **Supabase** — PostgreSQL géré & stockage d'objets
+- **Prisma Migrate** — Migrations de base de données
+
+### Outils de développement
+
+- **npm** — Gestionnaire de paquets
+- **ESLint** — Linting du code
+- **dotenv** — Gestion des variables d'environnement
+
+## Prérequis
+
+Avant de commencer, assurez-vous d'avoir :
+
+- **Node.js** (v18 ou supérieur)
+- **npm** (fourni avec Node.js)
+- Une base de données **PostgreSQL** (locale ou distante, déjà en ligne)
+- Un compte **Supabase** (pour le stockage audio)
+- **Git** pour le contrôle de version
+
+## Installation
+
+### 1. Cloner le dépôt
+
+```bash
+git clone https://github.com/yourusername/zaaro-ai-collect.git
+cd zaaro-ai-collect
+```
+
+### 2. Installer les dépendances
+
+```bash
+npm install
+```
+
+### 3. Configurer les variables d'environnement
+
+Créez un fichier `.env.local` à la racine du projet avec vos **identifiants de base de données en ligne** :
+
+```env
+# Base de données (votre base en ligne existante)
+DATABASE_URL="postgresql://user:password@your-host:5432/zaaro_db"
+
+# NextAuth
+NEXTAUTH_SECRET="your-secret-key-here-change-in-production"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```
+
+**Comment générer NEXTAUTH_SECRET :**
+
+```bash
+openssl rand -base64 32
+```
+
+⚠️ **IMPORTANT :** Le fichier `.env.local` est dans `.gitignore` et ne sera PAS poussé sur GitHub. Vos identifiants restent sécurisés localement.
+
+### 4. Configurer la base de données
+
+Synchronisez votre schéma avec la base de données en ligne existante :
+
+```bash
+# Générer le client Prisma
+npm run db:generate
+
+# Synchroniser le schéma avec votre base en ligne
+npm run db:push
+
+# Insérer les données initiales avec un utilisateur admin (optionnel si déjà fait)
+npm run db:seed
+```
+
+Le script de seed crée un utilisateur admin avec :
+
+- **Email :** `admin@zaaro.ai`
+- **Mot de passe :** `admin123` (⚠️ À changer en production !)
+
+### 5. Configurer Supabase Storage
+
+1. Allez sur votre tableau de bord Supabase
+2. Naviguez vers **Storage**
+3. Créez un nouveau bucket nommé `recordings`
+4. Configurez les politiques du bucket pour autoriser les uploads par les utilisateurs authentifiés
+
+## Lancer le projet
+
+### Développement
+
+```bash
+npm run dev
+```
+
+L'application sera disponible sur `http://localhost:3000`
+
+### Build de production
+
+```bash
+npm run build
+npm start
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Structure du projet
+
+```
+zaaro-ai-collect/
+├── src/
+│   ├── app/                    # Répertoire App de Next.js
+│   │   ├── (app)/              # Routes utilisateur (protégées)
+│   │   │   ├── dashboard/      # Tableau de bord principal
+│   │   │   ├── record/         # Interface d'enregistrement
+│   │   │   ├── history/        # Historique des soumissions
+│   │   │   └── profile/        # Profil utilisateur
+│   │   ├── (admin)/            # Routes admin (protégées)
+│   │   │   ├── admin/          # Tableau de bord admin
+│   │   │   ├── validation/     # Validation des soumissions
+│   │   │   ├── phrases/        # Gestion des phrases
+│   │   │   ├── languages/      # Statistiques par langue
+│   │   │   └── users/          # Gestion des utilisateurs
+│   │   ├── api/                # Routes API
+│   │   │   ├── auth/           # Endpoints d'authentification
+│   │   │   ├── recordings/     # Opérations d'enregistrement
+│   │   │   ├── phrases/        # Endpoints phrases
+│   │   │   ├── user/           # Endpoints données utilisateur
+│   │   │   └── admin/          # Opérations admin
+│   │   ├── login/              # Page de connexion
+│   │   ├── register/           # Page d'inscription
+│   │   └── layout.tsx          # Layout racine
+│   ├── components/
+│   │   └── ui/                 # Composants UI réutilisables
+│   ├── lib/
+│   │   ├── prisma.ts           # Client Prisma
+│   │   ├── utils.ts            # Fonctions utilitaires
+│   │   └── supabase/           # Intégration Supabase
+│   └── app/globals.css         # Styles globaux
+├── prisma/
+│   ├── schema.prisma           # Schéma de base de données
+│   └── seed.js                 # Script de seed
+├── public/                     # Assets statiques
+├── auth.ts                     # Configuration NextAuth
+├── auth.config.ts              # Callbacks d'authentification
+├── middleware.ts               # Middleware NextAuth
+├── tailwind.config.ts          # Configuration Tailwind
+├── tsconfig.json               # Configuration TypeScript
+└── package.json                # Dépendances
+```
+
+## Schéma de base de données
+
+L'application utilise les tables principales suivantes :
+
+- **users** - Comptes utilisateurs et profils
+- **recordings** - Métadonnées des soumissions audio
+- **phrases** - Phrases à enregistrer
+- **sessions** - Gestion des sessions NextAuth
+
+Voir [prisma/schema.prisma](prisma/schema.prisma) pour le schéma complet.
+
+## Flux principaux
+
+### Flux d'enregistrement utilisateur
+
+1. L'utilisateur se connecte au tableau de bord
+2. Il sélectionne la langue et le domaine
+3. Il enregistre deux prises d'une phrase donnée
+4. Il soumet les deux enregistrements
+5. Les fichiers audio sont uploadés vers Supabase
+6. Les métadonnées sont stockées dans PostgreSQL
+
+### Flux de validation admin
+
+1. L'admin se connecte au tableau de bord admin
+2. Il examine les soumissions en attente
+3. Il écoute les enregistrements
+4. Il valide ou rejette avec un retour
+5. Il génère des statistiques et des exports
+
+## Référence des variables d'environnement
+
+| Variable                        | Description                   | Exemple                                      |
+| ------------------------------- | ----------------------------- | -------------------------------------------- |
+| `DATABASE_URL`                  | Chaîne de connexion PostgreSQL | `postgresql://user:pass@host:5432/db`        |
+| `NEXTAUTH_SECRET`               | Secret pour la signature JWT  | Générer avec `openssl rand -base64 32`       |
+| `NEXTAUTH_URL`                  | URL publique de l'application | `http://localhost:3000` ou `https://app.com` |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL du projet Supabase        | `https://xxxxx.supabase.co`                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé anonyme Supabase          | Trouvée dans les paramètres Supabase         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Clé service role Supabase     | Trouvée dans les paramètres Supabase         |
+
+## Déploiement
+
+### Vercel (recommandé pour Next.js)
+
+1. Poussez votre code sur GitHub (`.env.local` n'est PAS inclus)
+2. Connectez le dépôt à Vercel
+3. **Ajoutez les variables d'environnement dans le tableau de bord Vercel :**
+   - `DATABASE_URL` (l'URL de votre base en ligne)
+   - `NEXTAUTH_SECRET` (générez-en une nouvelle avec `openssl rand -base64 32`)
+   - `NEXTAUTH_URL` (votre domaine de production)
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. Déployez
+
+```bash
+# Commande de build : npm run build
+# Commande de start : npm start
+```
+
+## Considérations de sécurité
+
+**Avant de passer en production :**
+
+- **Ne jamais committer `.env.local` dans Git** — il est déjà dans `.gitignore`
+- Définissez les variables d'environnement sur votre plateforme de déploiement (Vercel, Railway, etc.) via leur tableau de bord
+- Changez `NEXTAUTH_SECRET` pour une valeur aléatoire forte en production
+- Changez immédiatement le mot de passe admin par défaut
+- Utilisez HTTPS en production (les plateformes de déploiement le gèrent)
+- Définissez `NEXTAUTH_URL` sur votre domaine de production
+- Vérifiez les politiques de stockage Supabase
+- Activez les sauvegardes de base de données chez votre fournisseur PostgreSQL
+- Mettez en place le suivi des erreurs et la supervision
+- Vérifiez et mettez à jour les paramètres CORS
+
+## Scripts disponibles
+
+```bash
+# Développement
+npm run dev           # Démarrer le serveur de développement
+
+# Build
+npm run build         # Build pour la production
+npm start             # Démarrer le serveur de production
+
+# Base de données
+npm run db:generate   # Générer le client Prisma
+npm run db:push       # Synchroniser le schéma vers la base
+npm run db:seed       # Insérer les données initiales
+
+# Qualité du code
+npm run lint          # Exécuter ESLint
+```
+
+## Dépannage
+
+### Problèmes de connexion à la base de données
+
+- Vérifiez que `DATABASE_URL` est correcte
+- Vérifiez que PostgreSQL est en cours d'exécution
+- Assurez-vous que l'utilisateur a les permissions nécessaires
+
+### Problèmes de stockage Supabase
+
+- Vérifiez que le bucket s'appelle `recordings`
+- Vérifiez que la clé service role est valide
+- Assurez-vous que les politiques de stockage autorisent les uploads
+
+### Échec de l'upload d'enregistrement
+
+- Vérifiez les permissions micro du navigateur
+- Vérifiez que le bucket Supabase Storage existe
+- Vérifiez la connexion réseau
+
+## Support
+
+Pour les problèmes, questions ou suggestions :
+
+- Ouvrez une issue sur GitHub
+- Consultez la documentation existante
+- Passez en revue la structure du projet
+
+## Remerciements
+
+Réalisé avec :
+
+- Les communautés Next.js et React
+- Supabase pour l'infrastructure
+- Tailwind CSS pour le styling
+- Tous les contributeurs préservant les langues locales
