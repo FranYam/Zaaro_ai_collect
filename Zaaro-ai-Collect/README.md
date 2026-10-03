@@ -116,8 +116,8 @@ npm run db:seed
 
 The seed script creates an admin user with:
 
-- **Email:** `admin@zaaro.local`
-- **Password:** `Admin@123` (⚠️ Change this in production!)
+- **Email:** `admin@zaaro.ai`
+- **Password:** `admin123` (⚠️ Change this in production!)
 
 ### 5. Set Up Supabase Storage
 
