@@ -46,13 +46,19 @@ function buildNumberedPath(
  * Flux d'exécution :
  *  1. Vérification de l'authentification et de la configuration Supabase.
  *  2. Lecture du FormData (phraseId, language, duration, audio1, audio2).
- *  3. Vérification que la phrase existe et est encore PENDING.
- *  4. Calcul du nouveau numéro d'ordre (recordingCount + 1).
- *  5. Upload des deux fichiers audio dans Supabase Storage avec nommage numéroté.
- *  6. Transaction Prisma atomique :
- *     - Création de l'enregistrement en base (Recording)
- *     - Mise à jour du compteur de la phrase (Phrase.recordingCount)
- *     - Passage en "DONE" si le seuil MAX_RECORDINGS est atteint
+ *  3. Garde anti-doublon : l'utilisateur ne doit pas avoir déjà enregistré
+ *     cette phrase dans cette langue (contrainte @@unique en base, vérifiée
+ *     ici en amont pour renvoyer un message clair).
+ *  4. Réservation atomique d'un créneau : UPDATE conditionnel qui incrémente
+ *     recordingCount uniquement si la phrase est PENDING et sous le seuil.
+ *     C'est cette atomicité au niveau base qui élimine la course entre deux
+ *     soumissions simultanées (plus jamais plus de 10 enregistrements).
+ *  5. Lecture du compteur réservé pour numéromer les fichiers audio.
+ *  6. Upload des deux fichiers audio dans Supabase Storage.
+ *  7. Création du Recording en base. En cas d'échec (y compris doublon
+ *     concurrent → P2002), les fichiers uploadés sont supprimés et le
+ *     créneau réservé est libéré (décrément compensatoire).
+ *  8. Passage idempotent en "DONE" si le seuil MAX_RECORDINGS est atteint.
  *
  * Corps FormData :
  *   phraseId  - ID de la phrase à enregistrer
@@ -73,6 +79,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
+    const userId = session.user.id
 
     // ── Vérification de la configuration Supabase Storage ────────────────────
     if (!isSupabaseConfigured()) {
@@ -95,78 +102,139 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Données incomplètes" }, { status: 400 })
     }
 
-    // ── Vérification de l'état de la phrase ──────────────────────────────────
-    // On récupère le compteur actuel avant l'upload pour :
-    //  a) S'assurer que la phrase est encore PENDING
-    //  b) Calculer le numéro du prochain enregistrement
-    const phrase = await prisma.phrase.findUnique({
-      where: { id: phraseId },
-      select: { id: true, recordingCount: true, status: true },
+    // ── Garde anti-doublon ────────────────────────────────────────────────────
+    // Un contributeur = un enregistrement par phrase et par langue. La contrainte
+    // @@unique([userId, phraseId, language]) en base garantit ce règle même en
+    // cas de soumissions concurrentes ; ce contrôle en amont renvoie simplement
+    // un message clair plutôt qu'une erreur technique.
+    const existing = await prisma.recording.findFirst({
+      where: { userId, phraseId, language },
+      select: { id: true },
+    })
+    if (existing) {
+      return NextResponse.json(
+        { error: "Vous avez déjà enregistré cette phrase dans cette langue." },
+        { status: 409 }
+      )
+    }
+
+    // ── Réservation atomique d'un créneau ────────────────────────────────────
+    // UPDATE ... WHERE status = 'PENDING' AND recordingCount < MAX :
+    //  - l'incrérement { increment: 1 } est calculé par PostgreSQL, pas en JS ;
+    //  - deux requêtes concurrentes ne peuvent jamais dépasser le seuil ;
+    //  - si count === 0, la phrase est introuvable, DONE, ou déjà complète.
+    const reserved = await prisma.phrase.updateMany({
+      where: {
+        id: phraseId,
+        status: "PENDING",
+        recordingCount: { lt: MAX_RECORDINGS },
+      },
+      data: { recordingCount: { increment: 1 } },
     })
 
-    if (!phrase) {
-      return NextResponse.json({ error: "Phrase introuvable" }, { status: 404 })
-    }
-    if (phrase.status === "DONE") {
-      // La phrase a déjà atteint MAX_RECORDINGS — on refuse l'upload
+    if (reserved.count === 0) {
+      // Distinguer "phrase introuvable" (404) de "phrase complète" (409)
+      const phrase = await prisma.phrase.findUnique({
+        where: { id: phraseId },
+        select: { status: true },
+      })
+      if (!phrase) {
+        return NextResponse.json({ error: "Phrase introuvable" }, { status: 404 })
+      }
       return NextResponse.json(
         { error: "Cette phrase a déjà atteint le nombre maximum d'enregistrements." },
         { status: 409 }
       )
     }
 
-    // Numéro du prochain enregistrement (1-indexé)
-    const newCount = phrase.recordingCount + 1
+    // Compensation en cas d'échec après la réservation (upload ou création) :
+    // libère le créneau réservé. Best-effort — ne masque pas l'erreur d'origine.
+    const releaseSlot = async () => {
+      try {
+        await prisma.phrase.update({
+          where: { id: phraseId },
+          data: { recordingCount: { decrement: 1 } },
+        })
+      } catch (e) {
+        console.error("Slot release error:", e)
+      }
+    }
+
+    // ── Lecture du numéro réservé ─────────────────────────────────────────────
+    // Sert uniquement à numéromer les fichiers (cosmétique). Deux réservations
+    // concurrentes peuvent lire le même numéro, sans collision possible car le
+    // chemin inclut le userId.
+    const phraseAfterReserve = await prisma.phrase.findUnique({
+      where: { id: phraseId },
+      select: { recordingCount: true },
+    })
+    const newCount = phraseAfterReserve?.recordingCount ?? MAX_RECORDINGS
 
     // ── Construction des chemins de fichiers numérotés ────────────────────────
-    const path1 = buildNumberedPath(session.user.id, phraseId, 1, newCount)
-    const path2 = buildNumberedPath(session.user.id, phraseId, 2, newCount)
+    const path1 = buildNumberedPath(userId, phraseId, 1, newCount)
+    const path2 = buildNumberedPath(userId, phraseId, 2, newCount)
 
     // ── Upload Supabase Storage ───────────────────────────────────────────────
-    // Si l'un des uploads échoue, on supprime les fichiers déjà uploadés (best-effort)
-    // et on retourne une erreur 502 pour inviter l'utilisateur à réessayer.
+    // Si l'un des uploads échoue, on supprime les fichiers déjà uploadés
+    // (best-effort), on libère le créneau réservé et on retourne une erreur
+    // 502 pour inviter l'utilisateur à réessayer.
     try {
       await uploadRecordingFile(audio1, path1)
       await uploadRecordingFile(audio2, path2)
     } catch (uploadError) {
       console.error("Supabase upload error:", uploadError)
       await deleteRecordingFiles([path1, path2])
+      await releaseSlot()
       return NextResponse.json(
         { error: "Impossible d'enregistrer les fichiers audio. Réessayez." },
         { status: 502 }
       )
     }
 
+    // ── Création du Recording ─────────────────────────────────────────────────
+    // La contrainte d'unicité peut encore rejeter un doublon concurrent
+    // (deux onglets / double-clic passés la garde anti-doublon) : P2002 → 409.
     const recordingId = crypto.randomUUID()
-
-    // ── Transaction Prisma atomique ───────────────────────────────────────────
-    // Les deux opérations (création Recording + mise à jour Phrase) s'exécutent
-    // ensemble : si l'une échoue, l'autre est annulée, garantissant la cohérence
-    // entre le compteur de la phrase et le nombre réel d'enregistrements en base.
-    const [recording] = await prisma.$transaction([
-      // 1. Créer l'enregistrement (statut PENDING → en attente de validation admin)
-      prisma.recording.create({
+    let recording
+    try {
+      recording = await prisma.recording.create({
         data: {
           id: recordingId,
           audioUrl: path1,
           audioUrl2: path2,
           duration: duration || 0,
           language,
-          userId: session.user.id,
+          userId,
           phraseId,
           status: "PENDING",
         },
-      }),
-      // 2. Incrémenter le compteur et éventuellement passer la phrase en DONE
-      prisma.phrase.update({
-        where: { id: phraseId },
-        data: {
-          recordingCount: newCount,
-          // Passage en "DONE" quand le seuil est atteint → plus proposée aux contributeurs
-          ...(newCount >= MAX_RECORDINGS ? { status: "DONE" } : {}),
-        },
-      }),
-    ])
+      })
+    } catch (createError) {
+      console.error("Recording create error:", createError)
+      await deleteRecordingFiles([path1, path2])
+      await releaseSlot()
+      const isDuplicate =
+        (createError as { code?: string }).code === "P2002"
+      if (isDuplicate) {
+        return NextResponse.json(
+          { error: "Vous avez déjà enregistré cette phrase dans cette langue." },
+          { status: 409 }
+        )
+      }
+      return NextResponse.json({ error: "Erreur serveur" }, { status: 500 })
+    }
+
+    // ── Passage idempotent en "DONE" ──────────────────────────────────────────
+    // UPDATE ... WHERE status = 'PENDING' AND recordingCount >= MAX :
+    // sans danger si exécuté plusieurs fois ou en parallèle.
+    await prisma.phrase.updateMany({
+      where: {
+        id: phraseId,
+        status: "PENDING",
+        recordingCount: { gte: MAX_RECORDINGS },
+      },
+      data: { status: "DONE" },
+    })
 
     return NextResponse.json({
       success: true,

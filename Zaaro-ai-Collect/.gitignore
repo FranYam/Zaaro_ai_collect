@@ -41,6 +41,9 @@ prisma/dev.db
 logs/
 *.log
 
+# Database backups (scripts/reconcile-recordings.js)
+backups/
+
 # Runtime data
 pids/
 *.pid

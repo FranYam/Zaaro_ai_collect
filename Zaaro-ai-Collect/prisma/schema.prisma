@@ -80,4 +80,10 @@ model Recording {
 
   phraseId String
   phrase   Phrase @relation(fields: [phraseId], references: [id])
+
+  // Un contributeur ne peut soumettre qu'UN enregistrement par phrase et par
+  // langue. La contrainte est garantie par la base elle-même : deux soumissions
+  // concurrentes pour le même triplet (userId, phraseId, language) voient la
+  // seconde rejetée par PostgreSQL (erreur P2002 côté Prisma).
+  @@unique([userId, phraseId, language], map: "recording_user_phrase_language_unique")
 }
