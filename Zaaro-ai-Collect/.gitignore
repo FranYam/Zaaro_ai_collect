@@ -35,6 +35,7 @@ Thumbs.db
 
 # Prisma
 prisma/generated/
+prisma/dev.db
 
 # Logs
 logs/
