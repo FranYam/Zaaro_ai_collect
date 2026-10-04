@@ -149,18 +149,18 @@ npm run lint
 zaaro-ai-collect/
 ├── src/
 │   ├── app/                    # Next.js app directory
-│   │   ├── (app)/              # User routes (protected)
+│   │   ├── (app)/              # User routes (protected) — FRONTEND
 │   │   │   ├── dashboard/      # Main dashboard
 │   │   │   ├── record/         # Recording interface
 │   │   │   ├── history/        # Submission history
 │   │   │   └── profile/        # User profile
-│   │   ├── (admin)/            # Admin routes (protected)
+│   │   ├── (admin)/            # Admin routes (protected) — FRONTEND
 │   │   │   ├── admin/          # Admin dashboard
 │   │   │   ├── validation/     # Submission validation
 │   │   │   ├── phrases/        # Phrase management
 │   │   │   ├── languages/      # Language statistics
 │   │   │   └── users/          # User management
-│   │   ├── api/                # API routes
+│   │   ├── api/                # REST endpoints — BACKEND
 │   │   │   ├── auth/           # Authentication endpoints
 │   │   │   ├── recordings/     # Recording operations
 │   │   │   ├── phrases/        # Phrase endpoints
@@ -169,20 +169,21 @@ zaaro-ai-collect/
 │   │   ├── login/              # Login page
 │   │   ├── register/           # Registration page
 │   │   └── layout.tsx          # Root layout
-│   ├── components/
-│   │   └── ui/                 # Reusable UI components
-│   ├── lib/
+│   ├── server/                 # BACKEND — shared server logic
+│   │   ├── auth.ts             # NextAuth configuration
+│   │   ├── auth.config.ts      # Auth callbacks
 │   │   ├── prisma.ts           # Prisma client
-│   │   ├── utils.ts            # Utility functions
-│   │   └── supabase/           # Supabase integration
+│   │   └── supabase/           # Supabase admin & storage integration
+│   ├── components/             # FRONTEND — reusable UI components
+│   │   └── ui/
+│   ├── lib/
+│   │   └── utils.ts            # Shared helpers (cn)
 │   └── app/globals.css         # Global styles
 ├── prisma/
 │   ├── schema.prisma           # Database schema
 │   └── seed.js                 # Database seed script
 ├── public/                     # Static assets
-├── auth.ts                     # NextAuth configuration
-├── auth.config.ts              # Auth callbacks
-├── middleware.ts               # NextAuth middleware
+├── middleware.ts               # NextAuth middleware (must stay at root)
 ├── tailwind.config.ts          # Tailwind configuration
 ├── tsconfig.json               # TypeScript configuration
 └── package.json                # Dependencies
@@ -465,18 +466,18 @@ npm run lint
 zaaro-ai-collect/
 ├── src/
 │   ├── app/                    # Répertoire App de Next.js
-│   │   ├── (app)/              # Routes utilisateur (protégées)
+│   │   ├── (app)/              # Routes utilisateur (protégées) — FRONTEND
 │   │   │   ├── dashboard/      # Tableau de bord principal
 │   │   │   ├── record/         # Interface d'enregistrement
 │   │   │   ├── history/        # Historique des soumissions
 │   │   │   └── profile/        # Profil utilisateur
-│   │   ├── (admin)/            # Routes admin (protégées)
+│   │   ├── (admin)/            # Routes admin (protégées) — FRONTEND
 │   │   │   ├── admin/          # Tableau de bord admin
 │   │   │   ├── validation/     # Validation des soumissions
 │   │   │   ├── phrases/        # Gestion des phrases
 │   │   │   ├── languages/      # Statistiques par langue
 │   │   │   └── users/          # Gestion des utilisateurs
-│   │   ├── api/                # Routes API
+│   │   ├── api/                # Endpoints REST — BACKEND
 │   │   │   ├── auth/           # Endpoints d'authentification
 │   │   │   ├── recordings/     # Opérations d'enregistrement
 │   │   │   ├── phrases/        # Endpoints phrases
@@ -485,20 +486,21 @@ zaaro-ai-collect/
 │   │   ├── login/              # Page de connexion
 │   │   ├── register/           # Page d'inscription
 │   │   └── layout.tsx          # Layout racine
-│   ├── components/
-│   │   └── ui/                 # Composants UI réutilisables
-│   ├── lib/
+│   ├── server/                 # BACKEND — logique serveur partagée
+│   │   ├── auth.ts             # Configuration NextAuth
+│   │   ├── auth.config.ts      # Callbacks d'authentification
 │   │   ├── prisma.ts           # Client Prisma
-│   │   ├── utils.ts            # Fonctions utilitaires
-│   │   └── supabase/           # Intégration Supabase
+│   │   └── supabase/           # Intégration Supabase (admin & storage)
+│   ├── components/             # FRONTEND — composants UI réutilisables
+│   │   └── ui/
+│   ├── lib/
+│   │   └── utils.ts            # Helpers partagés (cn)
 │   └── app/globals.css         # Styles globaux
 ├── prisma/
 │   ├── schema.prisma           # Schéma de base de données
 │   └── seed.js                 # Script de seed
 ├── public/                     # Assets statiques
-├── auth.ts                     # Configuration NextAuth
-├── auth.config.ts              # Callbacks d'authentification
-├── middleware.ts               # Middleware NextAuth
+├── middleware.ts               # Middleware NextAuth (doit rester à la racine)
 ├── tailwind.config.ts          # Configuration Tailwind
 ├── tsconfig.json               # Configuration TypeScript
 └── package.json                # Dépendances

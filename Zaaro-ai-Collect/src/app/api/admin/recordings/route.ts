@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/../auth"
-import prisma from "@/lib/prisma"
-import { resolveRecordingPlaybackUrls } from "@/lib/supabase/storage"
+import { auth } from "@/server/auth"
+import prisma from "@/server/prisma"
+import { resolveRecordingPlaybackUrls } from "@/server/supabase/storage"
 
 const LANGUAGES = ["Mooré", "Dioula", "Gourounsi", "Fulfulde"]
 const DOMAINS = ["sante", "administration", "agriculture", "finance"]

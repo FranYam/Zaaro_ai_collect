@@ -1,5 +1,5 @@
 import { ReactNode } from "react"
-import { auth } from "@/../auth"
+import { auth } from "@/server/auth"
 import { redirect } from "next/navigation"
 import Sidebar from "@/components/ui/sidebar"
 

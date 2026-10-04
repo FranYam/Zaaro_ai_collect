@@ -1,6 +1,6 @@
-import { auth } from "@/../auth"
+import { auth } from "@/server/auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import prisma from "@/lib/prisma"
+import prisma from "@/server/prisma"
 import Link from "next/link"
 
 const statusColor: Record<string, string> = {

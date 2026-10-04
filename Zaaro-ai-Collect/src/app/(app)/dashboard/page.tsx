@@ -1,9 +1,9 @@
-import { auth } from "@/../auth"
+import { auth } from "@/server/auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import prisma from "@/lib/prisma"
+import prisma from "@/server/prisma"
 import { Mic, Clock, CheckCircle, AlertCircle } from "lucide-react"
 
 function formatDuration(seconds: number) {

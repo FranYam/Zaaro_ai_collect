@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/../auth"
-import prisma from "@/lib/prisma"
-import { isSupabaseConfigured } from "@/lib/supabase/admin"
+import { auth } from "@/server/auth"
+import prisma from "@/server/prisma"
+import { isSupabaseConfigured } from "@/server/supabase/admin"
 import {
   deleteRecordingFiles,
   uploadRecordingFile,
-} from "@/lib/supabase/storage"
+} from "@/server/supabase/storage"
 
 /**
  * Nombre maximum d'enregistrements acceptés par texte.
