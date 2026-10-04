@@ -77,23 +77,15 @@ npm install
 
 ### 3. Set Up Environment Variables
 
-Create a `.env.local` file in the root directory with your **online database credentials**:
+Copy the example file and fill in your values:
 
-```env
-# Database (your existing online database)
-DATABASE_URL="postgresql://user:password@your-host:5432/zaaro_db"
-
-# NextAuth
-NEXTAUTH_SECRET="your-secret-key-here-change-in-production"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```bash
+cp .env.example .env.local   # Windows: copy .env.example .env.local
 ```
 
-**How to generate NEXTAUTH_SECRET:**
+The complete, commented list of variables (database URLs, auth secret, Supabase keys) lives in [`.env.example`](.env.example) — the single source of truth for configuration.
+
+**How to generate the auth secret:**
 
 ```bash
 openssl rand -base64 32
@@ -226,16 +218,9 @@ See [prisma/schema.prisma](prisma/schema.prisma) for the complete schema.
 4. Validates or rejects with feedback
 5. Generates statistics and exports
 
-## Environment Variables Reference
+## Environment Variables
 
-| Variable                        | Description                  | Example                                      |
-| ------------------------------- | ---------------------------- | -------------------------------------------- |
-| `DATABASE_URL`                  | PostgreSQL connection string | `postgresql://user:pass@host:5432/db`        |
-| `NEXTAUTH_SECRET`               | Secret for JWT signing       | Generate with `openssl rand -base64 32`      |
-| `NEXTAUTH_URL`                  | Public URL of the app        | `http://localhost:3000` or `https://app.com` |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL         | `https://xxxxx.supabase.co`                  |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key       | Found in Supabase settings                   |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase service role key    | Found in Supabase settings                   |
+All required variables are listed and commented in [`.env.example`](.env.example) — copy it to `.env.local` and fill in your values. Real secrets are never committed to Git.
 
 ## Deployment
 
@@ -243,10 +228,9 @@ See [prisma/schema.prisma](prisma/schema.prisma) for the complete schema.
 
 1. Push your code to GitHub (`.env.local` is NOT included)
 2. Connect the repository to Vercel
-3. **Add environment variables in Vercel dashboard:**
+3. **Add environment variables in the Vercel dashboard** (see [`.env.example`](.env.example) for details):
    - `DATABASE_URL` (your online database URL)
-   - `NEXTAUTH_SECRET` (generate new one with `openssl rand -base64 32`)
-   - `NEXTAUTH_URL` (your production domain)
+   - `AUTH_SECRET` (generate a new one with `openssl rand -base64 32`)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
@@ -263,10 +247,10 @@ See [prisma/schema.prisma](prisma/schema.prisma) for the complete schema.
 
 - **Never commit `.env.local` to Git** - it's already in `.gitignore`
 - Set environment variables on your deployment platform (Vercel, Railway, etc.) via their dashboard
-- Change `NEXTAUTH_SECRET` to a strong random value for production
+- Change `AUTH_SECRET` to a strong random value for production
 - Change the default admin password immediately
 - Use HTTPS in production (deployment platforms handle this)
-- Set `NEXTAUTH_URL` to your production domain
+- Set `AUTH_URL` to your production domain
 - Review Supabase storage policies
 - Enable database backups on your PostgreSQL provider
 - Set up error tracking and monitoring
@@ -409,23 +393,15 @@ npm install
 
 ### 3. Configurer les variables d'environnement
 
-Créez un fichier `.env.local` à la racine du projet avec vos **identifiants de base de données en ligne** :
+Copiez le fichier d'exemple puis remplissez vos valeurs :
 
-```env
-# Base de données (votre base en ligne existante)
-DATABASE_URL="postgresql://user:password@your-host:5432/zaaro_db"
-
-# NextAuth
-NEXTAUTH_SECRET="your-secret-key-here-change-in-production"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```bash
+cp .env.example .env.local   # Windows : copy .env.example .env.local
 ```
 
-**Comment générer NEXTAUTH_SECRET :**
+La liste complète et commentée des variables (URLs de base de données, secret d'authentification, clés Supabase) se trouve dans [`.env.example`](.env.example) — c'est la source de vérité unique pour la configuration.
+
+**Comment générer le secret d'authentification :**
 
 ```bash
 openssl rand -base64 32
@@ -558,16 +534,9 @@ Voir [prisma/schema.prisma](prisma/schema.prisma) pour le schéma complet.
 4. Il valide ou rejette avec un retour
 5. Il génère des statistiques et des exports
 
-## Référence des variables d'environnement
+## Variables d'environnement
 
-| Variable                        | Description                   | Exemple                                      |
-| ------------------------------- | ----------------------------- | -------------------------------------------- |
-| `DATABASE_URL`                  | Chaîne de connexion PostgreSQL | `postgresql://user:pass@host:5432/db`        |
-| `NEXTAUTH_SECRET`               | Secret pour la signature JWT  | Générer avec `openssl rand -base64 32`       |
-| `NEXTAUTH_URL`                  | URL publique de l'application | `http://localhost:3000` ou `https://app.com` |
-| `NEXT_PUBLIC_SUPABASE_URL`      | URL du projet Supabase        | `https://xxxxx.supabase.co`                  |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé anonyme Supabase          | Trouvée dans les paramètres Supabase         |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Clé service role Supabase     | Trouvée dans les paramètres Supabase         |
+Toutes les variables requises sont listées et commentées dans [`.env.example`](.env.example) — copiez-le vers `.env.local` et remplissez vos valeurs. Les vrais secrets ne sont jamais committés dans Git.
 
 ## Déploiement
 
@@ -575,10 +544,9 @@ Voir [prisma/schema.prisma](prisma/schema.prisma) pour le schéma complet.
 
 1. Poussez votre code sur GitHub (`.env.local` n'est PAS inclus)
 2. Connectez le dépôt à Vercel
-3. **Ajoutez les variables d'environnement dans le tableau de bord Vercel :**
+3. **Ajoutez les variables d'environnement dans le tableau de bord Vercel** (détails dans [`.env.example`](.env.example)) :
    - `DATABASE_URL` (l'URL de votre base en ligne)
-   - `NEXTAUTH_SECRET` (générez-en une nouvelle avec `openssl rand -base64 32`)
-   - `NEXTAUTH_URL` (votre domaine de production)
+   - `AUTH_SECRET` (générez-en une nouvelle avec `openssl rand -base64 32`)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
@@ -595,10 +563,10 @@ Voir [prisma/schema.prisma](prisma/schema.prisma) pour le schéma complet.
 
 - **Ne jamais committer `.env.local` dans Git** — il est déjà dans `.gitignore`
 - Définissez les variables d'environnement sur votre plateforme de déploiement (Vercel, Railway, etc.) via leur tableau de bord
-- Changez `NEXTAUTH_SECRET` pour une valeur aléatoire forte en production
+- Changez `AUTH_SECRET` pour une valeur aléatoire forte en production
 - Changez immédiatement le mot de passe admin par défaut
 - Utilisez HTTPS en production (les plateformes de déploiement le gèrent)
-- Définissez `NEXTAUTH_URL` sur votre domaine de production
+- Définissez `AUTH_URL` sur votre domaine de production
 - Vérifiez les politiques de stockage Supabase
 - Activez les sauvegardes de base de données chez votre fournisseur PostgreSQL
 - Mettez en place le suivi des erreurs et la supervision
