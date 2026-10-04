@@ -12,7 +12,8 @@ export default function AdminLanguagesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/admin/recordings").then(r => r.json()).then(d => {
+    // pageSize=0 : stats seules, aucune liste ni URL signée transférée
+    fetch("/api/admin/recordings?pageSize=0").then(r => r.json()).then(d => {
       setByLanguage(d.byLanguage)
       setLoading(false)
     })

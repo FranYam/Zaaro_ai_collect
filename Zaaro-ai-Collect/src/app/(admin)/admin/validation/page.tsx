@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Users } from "lucide-react"
+import { CheckCircle, XCircle, Users, ChevronLeft, ChevronRight } from "lucide-react"
 
 type Recording = {
   id: string; status: string; language: string; duration: number
@@ -11,6 +11,7 @@ type Recording = {
   user: { name: string; email: string }
   phrase: { text: string; domain: string }
 }
+type Pagination = { page: number; pageSize: number; total: number; totalPages: number }
 
 const statusBadge: Record<string, string> = {
   VALIDATED: "text-green-600 bg-green-50 border border-green-200",
@@ -36,13 +37,41 @@ export default function AdminValidationPage() {
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [loading, setLoading] = useState(true)
   const [validationFilter, setValidationFilter] = useState<"pending" | "all">("pending")
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 25, total: 0, totalPages: 1 })
+  const [pendingCount, setPendingCount] = useState(0)
+
+  // Charge une page de la file depuis l'API (filtre et pagination côté serveur —
+  // seuls les enregistrements de la page sont transférés, avec leurs URLs signées)
+  const load = async (filter: "pending" | "all", pageNum: number) => {
+    setLoading(true)
+    try {
+      const status = filter === "pending" ? "PENDING" : "ALL"
+      const res = await fetch(`/api/admin/recordings?status=${status}&page=${pageNum}`)
+      const d = await res.json()
+      setRecordings(d.recordings ?? [])
+      setPagination(d.pagination)
+      setPendingCount(d.stats?.pending ?? 0)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    fetch("/api/admin/recordings").then(r => r.json()).then(d => {
-      setRecordings(d.recordings)
-      setLoading(false)
-    })
+    load("pending", 1)
   }, [])
+
+  const handleFilter = (filter: "pending" | "all") => {
+    if (filter === validationFilter) return
+    setValidationFilter(filter)
+    setPage(1)
+    load(filter, 1)
+  }
+
+  const handlePage = (next: number) => {
+    setPage(next)
+    load(validationFilter, next)
+  }
 
   const handleStatus = async (id: string, status: "VALIDATED" | "REJECTED") => {
     const res = await fetch("/api/admin/recordings", {
@@ -51,15 +80,17 @@ export default function AdminValidationPage() {
       body: JSON.stringify({ recordingId: id, status }),
     })
     if (res.ok) {
-      setRecordings(prev => prev.map(r => r.id === id ? { ...r, status } : r))
+      if (validationFilter === "pending") {
+        // Mode file : l'enregistrement traité quitte la liste
+        setRecordings(prev => prev.filter(r => r.id !== id))
+        setPendingCount(c => Math.max(0, c - 1))
+      } else {
+        setRecordings(prev => prev.map(r => r.id === id ? { ...r, status } : r))
+      }
     }
   }
 
-  const displayed = validationFilter === "pending"
-    ? recordings.filter(r => r.status === "PENDING")
-    : recordings
-
-  if (loading) return <div className="animate-pulse p-8">Chargement...</div>
+  if (loading && recordings.length === 0) return <div className="animate-pulse p-8">Chargement...</div>
 
   return (
     <div className="space-y-6">
@@ -69,24 +100,24 @@ export default function AdminValidationPage() {
           <p className="text-muted-foreground mt-1">Validez ou rejetez les enregistrements des contributeurs</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant={validationFilter === "pending" ? "default" : "outline"} onClick={() => setValidationFilter("pending")}>
-            En attente
+          <Button size="sm" variant={validationFilter === "pending" ? "default" : "outline"} onClick={() => handleFilter("pending")}>
+            En attente ({pendingCount})
           </Button>
-          <Button size="sm" variant={validationFilter === "all" ? "default" : "outline"} onClick={() => setValidationFilter("all")}>
-            Tous ({recordings.length})
+          <Button size="sm" variant={validationFilter === "all" ? "default" : "outline"} onClick={() => handleFilter("all")}>
+            {validationFilter === "all" ? `Tous (${pagination.total})` : "Tous"}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          {displayed.length === 0 ? (
+          {recordings.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
               {validationFilter === "pending" ? "✅ Aucun enregistrement en attente." : "Aucun enregistrement."}
             </div>
           ) : (
             <div className="divide-y">
-              {displayed.map((r) => (
+              {recordings.map((r) => (
                 <div key={r.id} className="p-4">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">
@@ -140,6 +171,22 @@ export default function AdminValidationPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 border-t">
+              <Button size="sm" variant="outline" className="gap-1" disabled={page <= 1 || loading}
+                onClick={() => handlePage(page - 1)}>
+                <ChevronLeft className="w-4 h-4" /> Précédent
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {pagination.page} sur {pagination.totalPages} · {pagination.total} enregistrements
+              </span>
+              <Button size="sm" variant="outline" className="gap-1" disabled={page >= pagination.totalPages || loading}
+                onClick={() => handlePage(page + 1)}>
+                Suivant <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           )}
         </CardContent>

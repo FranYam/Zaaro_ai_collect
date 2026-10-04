@@ -31,12 +31,14 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/admin/recordings").then(r => r.json()).then(d => {
+    // pageSize=8 : l'API ne renvoie que les 8 derniers enregistrements
+    // (activité récente) au lieu de la table complète
+    fetch("/api/admin/recordings?pageSize=8").then(r => r.json()).then(d => {
       setStats(d.stats)
       setByLanguage(d.byLanguage)
       setByDomain(d.byDomain)
       setTopContributors(d.topContributors)
-      setRecentRecordings(d.recordings.slice(0, 8))
+      setRecentRecordings(d.recordings)
       setLoading(false)
     })
   }, [])
