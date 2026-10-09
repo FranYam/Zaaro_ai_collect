@@ -60,3 +60,6 @@ coverage/
 
 # Package manager stores
 .pnpm-store/
+
+# ZCode session artifacts (plans, local agent state)
+.zcode/
