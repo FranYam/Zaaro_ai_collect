@@ -97,7 +97,7 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-6 mb-12 text-left">
               {[
-                { icon: Globe, color: "bg-brand-green/10 text-brand-green", title: "Langues locales", desc: "Mooré, Dioula, Gourounsi, Fulfulde et plus encore." },
+                { icon: Globe, color: "bg-brand-green/10 text-brand-green", title: "Langues locales", desc: "Lancement en Mooré — Dioula, Gourounsi et Fulfulde arrivent bientôt." },
                 { icon: Heart, color: "bg-brand-red/10 text-brand-red", title: "Impact communautaire", desc: "Des outils IA pensés pour la réalité burkinabè." },
                 { icon: ShieldCheck, color: "bg-brand-yellow/30 text-brand-yellow-dark", title: "Qualité garantie", desc: "Chaque enregistrement est validé par un administrateur." },
               ].map(({ icon: Icon, color, title, desc }) => (

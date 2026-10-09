@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import AudioRecorder from "@/components/ui/audio-recorder"
 import { HeartPulse, Building2, Wheat, Wallet, CheckCircle2 } from "lucide-react"
+import { ACTIVE_DOMAINS, ACTIVE_LANGUAGES, SINGLE_DOMAIN, SINGLE_LANGUAGE } from "@/lib/config"
 
 type Step = "SELECT" | "RECORD" | "SUCCESS"
 type Domain = "sante" | "administration" | "agriculture" | "finance"
@@ -17,10 +18,36 @@ const DOMAINS = [
   { id: "finance", label: "Finance", icon: Wallet, color: "text-yellow-500" },
 ]
 
+// Domaines ouverts à la contribution — voir src/lib/config.ts (MVP pilote).
+// La liste complète DOMAINS est conservée pour la réactivation future.
+const VISIBLE_DOMAINS = DOMAINS.filter((d) => ACTIVE_DOMAINS.includes(d.id))
+
+// Grille adaptée au nombre d'options affichées : une option unique est centrée
+// dans une largeur raisonnable (aucune cellule orphène décalée), et la grille
+// complète (4 options) reprend sa disposition d'origine.
+function optionGridClasses(count: number): string {
+  switch (count) {
+    case 1:
+      return "grid-cols-1 max-w-xs mx-auto"
+    case 2:
+      return "grid-cols-2 max-w-sm mx-auto"
+    case 3:
+      return "grid-cols-1 sm:grid-cols-3 max-w-md mx-auto"
+    default:
+      return "grid-cols-2 md:grid-cols-4"
+  }
+}
+
 export default function RecordFlow({ userLanguage }: { userLanguage: string }) {
   const [step, setStep] = useState<Step>("SELECT")
-  const [domain, setDomain] = useState<Domain | null>(null)
-  const [language, setLanguage] = useState<string>(userLanguage || "Mooré")
+  // Domaine auto-sélectionné quand un seul est actif (affichage informatif —
+  // voir src/lib/config.ts) ; sinon sélection manuelle comme avant.
+  const [domain, setDomain] = useState<Domain | null>(
+    SINGLE_DOMAIN && VISIBLE_DOMAINS[0] ? (VISIBLE_DOMAINS[0].id as Domain) : null
+  )
+  const [language, setLanguage] = useState<string>(
+    ACTIVE_LANGUAGES.includes(userLanguage) ? userLanguage : ACTIVE_LANGUAGES[0]
+  )
   const [phrase, setPhrase] = useState<{ id: string; text: string } | null>(null)
   const [isLoadingPhrase, setIsLoadingPhrase] = useState(false)
   const [recording1, setRecording1] = useState<{ blob: Blob; duration: number } | null>(null)
@@ -104,7 +131,9 @@ export default function RecordFlow({ userLanguage }: { userLanguage: string }) {
         </div>
         <div className="flex gap-3">
           <Button onClick={handleNextPhrase} size="lg">Phrase suivante</Button>
-          <Button variant="outline" size="lg" onClick={() => setStep("SELECT")}>Changer de domaine</Button>
+          {!SINGLE_DOMAIN && (
+            <Button variant="outline" size="lg" onClick={() => setStep("SELECT")}>Changer de domaine</Button>
+          )}
         </div>
       </div>
     )
@@ -116,17 +145,36 @@ export default function RecordFlow({ userLanguage }: { userLanguage: string }) {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Nouvelle contribution</h1>
-          <p className="text-muted-foreground">Choisissez un domaine et une langue pour commencer</p>
+          <p className="text-muted-foreground">
+            {SINGLE_DOMAIN && SINGLE_LANGUAGE
+              ? "Votre langue et votre domaine de contribution"
+              : "Choisissez un domaine et une langue pour commencer"}
+          </p>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Choisir un domaine</CardTitle>
-          </CardHeader>
+          {!SINGLE_DOMAIN && (
+            <CardHeader>
+              <CardTitle className="text-lg">Choisir un domaine</CardTitle>
+            </CardHeader>
+          )}
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {DOMAINS.map((d) => {
+            <div className={`grid ${optionGridClasses(VISIBLE_DOMAINS.length)} gap-4`}>
+              {VISIBLE_DOMAINS.map((d) => {
                 const Icon = d.icon
+                // Option unique → présentation informative sobre (aucun fond
+                // ni bordure de sélection) ; plusieurs options → bouton cliquable
+                if (SINGLE_DOMAIN) {
+                  return (
+                    <div
+                      key={d.id}
+                      className="flex flex-col items-center justify-center p-6"
+                    >
+                      <Icon className="w-8 h-8 mb-2 text-muted-foreground" />
+                      <span className="font-medium">{d.label}</span>
+                    </div>
+                  )
+                }
                 return (
                   <button
                     key={d.id}
@@ -147,24 +195,35 @@ export default function RecordFlow({ userLanguage }: { userLanguage: string }) {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Choisir une langue</CardTitle>
-          </CardHeader>
+          {!SINGLE_LANGUAGE && (
+            <CardHeader>
+              <CardTitle className="text-lg">Choisir une langue</CardTitle>
+            </CardHeader>
+          )}
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {["Mooré", "Dioula", "Gourounsi", "Fulfulde"].map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLanguage(l)}
-                  className={`py-3 px-4 rounded-lg border text-center font-medium transition-all ${
-                    language === l
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-input bg-background hover:bg-secondary"
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
+            <div className={`grid ${optionGridClasses(ACTIVE_LANGUAGES.length)} gap-4`}>
+              {ACTIVE_LANGUAGES.map((l) =>
+                SINGLE_LANGUAGE ? (
+                  <div
+                    key={l}
+                    className="py-3 px-4 text-center font-medium"
+                  >
+                    {l}
+                  </div>
+                ) : (
+                  <button
+                    key={l}
+                    onClick={() => setLanguage(l)}
+                    className={`py-3 px-4 rounded-lg border text-center font-medium transition-all ${
+                      language === l
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-background hover:bg-secondary"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                )
+              )}
             </div>
           </CardContent>
         </Card>
